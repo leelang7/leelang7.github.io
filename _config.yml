@@ -112,10 +112,10 @@ author:
   links:
     - label: "Email"
       icon: "fas fa-fw fa-envelope-square"
-      # url: "mailto:your.name@email.com"
-    - label: "Website"
+      url: "mailto:leescvsir@gmail.com"
+    - label: "Youtube"
       icon: "fas fa-fw fa-link"
-      # url: "https://your-website.com"
+      url: "https://www.youtube.com/channel/UCF2tSalr1Nyxczl8wbR9SVw?sub_confirmation=1"
     - label: "Twitter"
       icon: "fab fa-fw fa-twitter-square"
       # url: "https://twitter.com/"
