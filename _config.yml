@@ -284,8 +284,7 @@ defaults:
       path: ""
       type: posts
     values:
-      categories : ["python"]
-      tags : ["python"]
+      categories : ["python", "ML", "DL"]
       layout: single
       author_profile: true
       read_time: true
