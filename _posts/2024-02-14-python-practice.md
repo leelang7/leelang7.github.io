@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "점프 투 파이썬 3장 연습문제"
+title: "연습문제"
 ---
 
 
