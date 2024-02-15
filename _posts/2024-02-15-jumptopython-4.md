@@ -1,99 +1,108 @@
 ---
 layout: post
-title: "점프 투 파이썬 3장 연습문제"
+title: "점프 투 파이썬 4장 연습문제"
 ---
 
 
 
-Q1. 다음 코드의 결괏값은?
+Q1. 주어진 자연수가 홀수인지 짝수인지 판별해 주는 함수(is_odd)를 작성해 보자.
+ 
 
-```
-a  = "Life is too short, you need python"
-
-if "wife" in a: print("wife")
-elif "python" in a and "you" not in a: print("python")
-elif "shirt" not in a: print("shirt")
-elif "need" in a: print("need")
-else: print("none")
-```
-
-
-
-Q2. while문을 사용해 1부터 1000까지 자연수 중 3의 배수의 합을 구하라.
-
-```
-result = 0
-
-i = 1
-while i <= 1000:
-  if # your code here.
-  	result += i
-  i += 1
->>> print(result)
-166833
-```
-
-
-
-Q3. while문을 사용하여 다음과 같이 별(*)을 표시하는 프로그램을 작성해보자.
-
-  *
-  
-  **
-  
-  ***
-  
-  ****
-  
-  *****
-  
-  
-```
-i = 0
-while = True:
-  i += 1
+def is_odd(number):
   if #your code here:
-    break
-  print(#your code here)
-```
+    return True
+  else:
+    return False
+ 2로 나누었을 때 나머지가 1이 되게 하는 if문을 작성한다.
 
 
 
-Q4. for문을 사용해서 1부터 100까지의 숫자를 출력해라.
+Q2. 입력으로 들어오는 모든 수의 평균 값을 계산해 주는 함수를 작성해보자. 
+(단, 입력으로 들어오는 수의 개수는 정해져 있지 않다.)
+ 
 
-```
-for i in #your code here:
-  print(i)
-```
+def avg_numbers(#your code here):
+  result = 0
+  for i in args:
+    result += i
+  return #your code here
+
+avg_numbers(1,2)
+avg_numbers(1,2,3,4,5)
+ 
+
+Q3. 다음은 두 개의 숫자를 입력받아 더하여 돌려주는 프로그램이다.
+ 
+
+input1 = input("첫 번째 숫자를 입력하세요:")
+input2 = input("두 번째 숫자를 입력하세요:")
+
+total = input1 + input2
+print("두 수의 합은 %s입니다." % total)
+위 식에 대한 출력값이다. 
+
+첫 번째 숫자를 입력하세요: 3
+두 번째 숫자를 입력하세요: 6
+두 수의 합은 36입니다.
+3과 6을 입력했을 때, 9가 아닌 36을 반환했다.
+
+이 프로그램의 오류를 수정해보자.
 
 
 
-Q5. A 학급에 총 10명의 학생이 있다. 이 학생들의 중간고사 점수는 다음과 같다. for문을 사용하여 A학급의 평균 점수를 구해보자. 
+Q4. 다음 중 출력 결과가 다른 것 한 개를 골라보자
+ 
 
-[ 70, 60, 55, 75, 95, 90, 80, 80, 85, 100 ]
-
-```
-A = [70,60,55,75,95,90,80,80,85,100]
-total = 0
-
-for score in A:
-  total += #your code here
-average = #youre code here
-print(average)
-```
+① print("you" "need" "python")
+② print("you"+"need"+"python")
+③ print("you", "need", "python")
+④ print("".join(["you", "need", "python"]))
 
 
 
-Q6. 리스트 중에서 홀수에만 2를 곱하여 저장하는 다음과 같은 코드가 있다. 아래 코드를 리스트 내포(list comprehension)을 사용하여 표현해보자.
+Q5. 다음은 "text.txt"라는 파일에 "Life is too short" 문자열을 저장한 후 다시 그 파일을 읽어서 출려하는 프로그램이다.
+ 
 
-```
-numbers = [1,2,3,4,5]
+f1 = open("test.txt", 'w')
+f1.write("Life is too short")
 
-result = []
-for n in numbers:
-  if n % 2 == 1:
-    result.append(n*2)
-```
+f2 = open("test.txt", 'r')
+print(f2.read())
+ 
+
+이 프로그램은 우리가 예상한 "Life is too short"라는 문장을 출력하지 않는다.
+
+우리가 예상한 값을 출력할 수 있도록 프로그램을 수정해보자.
+
+
+
+Q6. 사용자의 입력을 파일(test.txt)에 저장하는 프로그램을 작성해보자.
+(단 프로그램을 다시 실행하더라도 기존에 작성한 내용을 유지하고 새로 입력한 내용을 추가해야한다.)
+ 
+
+user_input = input("저장할 내용을 입력하세요 : ")
+f = open('test.txt', #your code here)
+f.write(user_input)
+f.write(#your code here)
+f.close()
+
+Q7. 다음과 같은 내용을 지닌 파일 test.txt가 있다.
+이 파일의 내용 중 'java'라는 문자열을 'python'으로 바꾸어서 저장해 보자.
+ 
+
+Life is too short
+you need java
+ 
+
+f = open('test.txt', 'r')
+body = #your code here
+f.close()
+
+body = #your code here
+
+f = open('test.txt', #your code here)
+f.write(body)
+f.close()
 
 
 
