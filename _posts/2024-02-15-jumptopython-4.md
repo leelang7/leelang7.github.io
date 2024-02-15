@@ -15,6 +15,8 @@ def is_odd(number):
     return False
 ```
 
+
+
  
 
 Q2. 입력으로 들어오는 모든 수의 평균 값을 계산해 주는 함수를 작성해보자. (단, 입력으로 들어오는 수의 개수는 정해져 있지 않다.)
@@ -29,6 +31,8 @@ def avg_numbers(#your code here):
 avg_numbers(1,2)
 avg_numbers(1,2,3,4,5)
 ```
+
+
 
 
 
@@ -54,6 +58,8 @@ print("두 수의 합은 %s입니다." % total)
 
 
 
+
+
 Q4. 다음 중 출력 결과가 다른 것 한 개를 골라보자
 
 
@@ -65,6 +71,8 @@ Q4. 다음 중 출력 결과가 다른 것 한 개를 골라보자
 ③ print("you", "need", "python")
 
 ④ print("".join(["you", "need", "python"]))
+
+
 
 
 
@@ -84,6 +92,8 @@ print(f2.read())
 
 
 
+
+
 Q6. 사용자의 입력을 파일(test.txt)에 저장하는 프로그램을 작성해보자.(단 프로그램을 다시 실행하더라도 기존에 작성한 내용을 유지하고 새로 입력한 내용을 추가해야한다.)
 
 ```
@@ -93,6 +103,8 @@ f.write(user_input)
 f.write(#your code here)
 f.close()
 ```
+
+
 
 
 
