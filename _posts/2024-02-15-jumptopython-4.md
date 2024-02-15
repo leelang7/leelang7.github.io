@@ -59,8 +59,11 @@ Q4. 다음 중 출력 결과가 다른 것 한 개를 골라보자
 
 
 ① print("you" "need" "python")
+
 ② print("you"+"need"+"python")
+
 ③ print("you", "need", "python")
+
 ④ print("".join(["you", "need", "python"]))
 
 
