@@ -20,22 +20,55 @@ title: "점프 투 파이썬 6장 연습문제"
 
 3. 게시판 페이징하기
 
-![image-20240220201233420](C:\Users\admin\AppData\Roaming\Typora\typora-user-images\image-20240220201233420.png)
+   - 함수 이름은? get_total_page
+   - 입력받는 값은? 게시물의 총 개수(m), 한 페이지에 보여 줄 게시물 수(n)
+   - 출력하는 값은? 총 페이지 수
 
-![image-20240220201250684](C:\Users\admin\AppData\Roaming\Typora\typora-user-images\image-20240220201250684.png)
+| 게시물의 총 개수(m) | 페이지당 보여줄 게시물 수(n) | 총 페이지 수 |
+| :------------------ | :--------------------------- | :----------- |
+| 5                   | 10                           | 1            |
+| 15                  | 10                           | 2            |
+| 25                  | 10                           | 3            |
+| 30                  | 10                           | 3            |
 
 
 
 4. 간단한 메모장 만들기
 
-   ![image-20240220201342665](C:\Users\admin\AppData\Roaming\Typora\typora-user-images\image-20240220201342665.png)
+   원하는 메모를 파일에 저장하고 추가 및 조회가 가능한 간단한 메모장을 만들어 보자.
+
+   python memo.py -a "Life is too short"
+
+   
+
+   
 
 5. 탭 문자를 공백 문자 4개로 바꾸기
 
-![image-20240220201420976](C:\Users\admin\AppData\Roaming\Typora\typora-user-images\image-20240220201420976.png)
+다음과 같은 형식으로 프로그램이 수행되도록 만들 것이다.
+
+```no-highlight
+python tabto4.py src dst
+```
+
+tabto4.py는 우리가 작성해야 할 파이썬 프로그램 이름, src는 탭을 포함하고 있는 원본 파일 이름, dst는 파일 안의 탭을 공백 4개로 변환한 결과를 저장할 파일 이름이다.
+
+예를 들어 a.txt에 있는 탭을 4개의 공백으로 바꾸어 b.txt에 저장하고 싶다면 다음과 같이 수행해야 한다.
+
+```no-highlight
+python tabto4.py a.txt b.txt
+```
+
+
 
 6. 하위 디렉토리 검색하기
 
-![image-20240220201457719](C:\Users\admin\AppData\Roaming\Typora\typora-user-images\image-20240220201457719.png)
+특정 디렉터리부터 시작해서 그 하위(디렉터리 포함)의 모든 파일 중 파이썬 파일(`*.py`)만 출력해 주는 프로그램을 만들어보자.
+
+- 필요한 기능은? 파이썬 파일만 찾아서 출력하기
+- 입력받는 값은? 검색을 시작할 디렉터리
+- 출력하는 값은? 파이썬 파일명
+
+
 
 source : 점프 투 파이썬
