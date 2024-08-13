@@ -41,19 +41,13 @@ sudo apt-get install -y nvidia-docker2
 6. 도커 컨테이너 내부에서 
    ```
    apt update
-   ```
-
-   ```
    apt install wget
    ```
 
    
-8. 아나콘다 다운로드
+8. 아나콘다 다운로드 및 설치
    ```
    wget https://repo.anaconda.com/archive/Anaconda3-2021.05-Linux-x86_64.sh 
-   ```
-
-   ```
    sh Anaconda3-2021.05-Linux-x86_64.sh 
    ```
    
