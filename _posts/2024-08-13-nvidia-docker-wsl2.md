@@ -29,9 +29,9 @@ sudo apt-get install -y nvidia-docker2
    
 
 4. 도커 컨네이너 진입
-
+   ```
    docker run --gpus all -it nvidia/cuda:11.6.2-base-ubuntu20.04 /bin/bash
-
+   ```
    
 
 5. nvidia-smi 명렁어로 도커 컨테이너 내부에서 gpu 정보가 출력되는지 확인
@@ -39,22 +39,26 @@ sudo apt-get install -y nvidia-docker2
    
 
 6. 도커 컨테이너 내부에서 
-
+   ```
    apt update
+   ```
 
+   ```
    apt install wget
+   ```
 
    
-
-7. 아나콘다 다운로드
-
+8. 아나콘다 다운로드
+   ```
    wget https://repo.anaconda.com/archive/Anaconda3-2021.05-Linux-x86_64.sh 
+   ```
 
+   ```
    sh Anaconda3-2021.05-Linux-x86_64.sh 
-
+   ```
    
 
-8. 환경설정 적용
+9. 환경설정 적용
 
    ```
    echo 'export PATH=/root/anaconda3/bin:$PATH' >> ~/.bashrc
