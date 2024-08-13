@@ -62,6 +62,20 @@ sudo apt-get install -y nvidia-docker2
    echo "source /root/anaconda3/etc/profile.d/conda.sh" >> ~/.bashrc
    ```
 
-```
-source ~/.bashrc
-```
+   ```
+   source ~/.bashrc
+   ```
+
+* 정리중
+* 
+docker export -o {출력파일명.tar} {컨테이너명 or name} : 스냅샷
+
+docker import {파일명.tar}
+
+docker commit {컨테이너명 or name} {이미지파일명}
+
+docker save -o {출력파일명.tar} {컨테이너명 or name}  : 레이어 정보 까지 포함
+
+docker load -i {파일명.tar}
+
+docker images : 도커들 정보출력(base이미지, commit한 이미지 등)
