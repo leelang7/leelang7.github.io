@@ -24,7 +24,7 @@ sudo apt-get install -y nvidia-docker2
 
 3. docker pull
 
-![image-20240813125337898](C:\Users\leesc\AppData\Roaming\Typora\typora-user-images\image-20240813125337898.png)
+![image-20240813125337898](https://github.com/leelang7/leelang7.github.io/blob/master/assets/image-20240813125337898.png)
 
 
 
