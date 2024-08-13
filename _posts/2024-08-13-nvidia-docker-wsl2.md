@@ -36,7 +36,7 @@ sudo apt-get install -y nvidia-docker2
 
 5. nvidia-smi 명렁어로 도커 컨테이너 내부에서 gpu 설정 확인
 
-   ![image-20240813125535071](https://github.com/leelang7/leelang7.github.io/blob/master/assets\image-20240813125535071.png)
+   ![image-20240813125535071](https://github.com/leelang7/leelang7.github.io/blob/master/assets/image-20240813125535071.png)
 
 
 
