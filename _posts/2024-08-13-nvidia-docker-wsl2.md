@@ -1,6 +1,7 @@
 ---
 layout: post
 title: Nvidia Docker 설치
+typora-root-url : ../
 ---
 
 ### [1. Nvidia Docker 설치](https://lolz0309.tistory.com/8#--%--Nvidia%--Docker%--%EC%--%A-%EC%B-%--)
