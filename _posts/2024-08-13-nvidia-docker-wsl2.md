@@ -1,7 +1,6 @@
 ---
 layout: post
-title: Nvidia Docker 설치
-typora-root-url : ../
+title: Nvidia Docker 설치(WSL2)
 ---
 
 ### [1. Nvidia Docker 설치](https://lolz0309.tistory.com/8#--%--Nvidia%--Docker%--%EC%--%A-%EC%B-%--)
@@ -23,11 +22,11 @@ sudo apt-get update
 sudo apt-get install -y nvidia-docker2
 ```
 
+
+
 3. docker pull
 
-![image-20240813125337898](https://github.com/leelang7/leelang7.github.io/blob/master/_posts/images/image-20240813125337898.png)
-
-
+   
 
 4. 도커 컨네이너 진입
 
@@ -35,23 +34,25 @@ sudo apt-get install -y nvidia-docker2
 
    
 
-5. nvidia-smi 명렁어로 도커 컨테이너 내부에서 gpu 설정 확인
+5. nvidia-smi 명렁어로 도커 컨테이너 내부에서 gpu 정보가 출력되는지 확인
 
-   ![image-20240813125535071](https://github.com/leelang7/leelang7.github.io/blob/master/_posts/images/image-20240813125535071.png)
+   
 
-
-
-6. 도커 컨테이너에서 
+6. 도커 컨테이너 내부에서 
 
    apt update
 
    apt install wget
+
+   
 
 7. 아나콘다 다운로드
 
    wget https://repo.anaconda.com/archive/Anaconda3-2021.05-Linux-x86_64.sh 
 
    sh Anaconda3-2021.05-Linux-x86_64.sh 
+
+   
 
 8. 환경설정 적용
 
@@ -67,8 +68,10 @@ sudo apt-get install -y nvidia-docker2
    source ~/.bashrc
    ```
 
+
+
 * 정리중
-  
+
 docker export -o {출력파일명.tar} {컨테이너명 or name} : 스냅샷
 
 docker import {파일명.tar}
