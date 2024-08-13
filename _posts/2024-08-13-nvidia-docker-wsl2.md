@@ -28,7 +28,7 @@ sudo apt-get install -y nvidia-docker2
 
 
 
-4. 도커 진입
+4. 도커 컨네이너 진입
 
    docker run --gpus all -it nvidia/cuda:11.6.2-base-ubuntu20.04 /bin/bash
 
@@ -67,7 +67,7 @@ sudo apt-get install -y nvidia-docker2
    ```
 
 * 정리중
-* 
+  
 docker export -o {출력파일명.tar} {컨테이너명 or name} : 스냅샷
 
 docker import {파일명.tar}
