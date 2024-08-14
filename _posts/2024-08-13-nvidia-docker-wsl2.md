@@ -5,7 +5,7 @@ title: Nvidia Docker 설치(WSL2)
 
 ### [1. Nvidia Docker 설치](https://lolz0309.tistory.com/8#--%--Nvidia%--Docker%--%EC%--%A-%EC%B-%--)
 
-1) Repo 설정과 GPG키를 설치 한다.
+1. Repo 설정과 GPG키를 설치 한다.
 
 ```shell
 distribution=$(. /etc/os-release;echo $ID$VERSION_ID) \
@@ -15,18 +15,18 @@ distribution=$(. /etc/os-release;echo $ID$VERSION_ID) \
             sudo tee /etc/apt/sources.list.d/nvidia-container-toolkit.list
 ```
 
-2) Nvidia Docker 설치
+2. Nvidia Docker 설치
 
 ```shell
 sudo apt-get update
 sudo apt-get install -y nvidia-docker2
 ```
 
-
-
 3. docker pull
+  '''
+  docker pull nvidia/cuda:11.6.2-base-ubuntu20.04
+  '''   
 
-   
 
 4. 도커 컨네이너 진입
    ```
@@ -45,14 +45,14 @@ sudo apt-get install -y nvidia-docker2
    ```
 
    
-8. 아나콘다 다운로드 및 설치
+7. 아나콘다 다운로드 및 설치
    ```
    wget https://repo.anaconda.com/archive/Anaconda3-2021.05-Linux-x86_64.sh 
    sh Anaconda3-2021.05-Linux-x86_64.sh 
    ```
    
 
-9. 환경설정 적용
+8. 환경설정 적용
 
    ```
    echo 'export PATH=/root/anaconda3/bin:$PATH' >> ~/.bashrc
