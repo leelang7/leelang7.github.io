@@ -1,0 +1,1258 @@
+
+
+​
+
+1. 좌표변환
+
+좌표 변환은 선형대수학과 로봇공학에 포함된 수학적 개념이다. ROS 2의 tf2를 이야기하기 전에 좌표 변환에 대해 간단히 정리해보자.
+
+​
+
+모바일 로봇은 초기 위치에서 목표 위치로 이동함을 목표로 한다. 로봇이 이동 중일 때 그 위치와 회전을 표현하기 위해서는 기준 좌표계가 필요하다. 아래 그림을 보면 로봇이 이동 중인 공간 기준 map 좌표계와 로봇 기준 odom 좌표계를 확인할 수 있다.[그림 1 참조] (빨간색 축이 X축, 초록색 축이 Y축 그리고 right-hand rule[2]을 이용하여 도출할 수 있는 방향으로 파란색 Z축을 설정하였다.)
+
+map 좌표계에서 바라본 odom 좌표계는 벡터 P만큼 떨어져 있고, Z축을 기준으로 Θ 만큼 회전되어 있다. 이를 벡터와 행렬로 이루어진 수식으로 적어보면 아래와 같다. robot 좌표계는 odom 좌표계와 일치한다.
+
+
+[그림 1. 모바일 로봇 좌표계]
+
+존재하지 않는 이미지입니다.
+P는 Position vector(위치 벡터), R은 Rotation matrix(회전 행렬)[3] 를 의미한다. P와 R의 왼쪽 위 첨자는 Source frame(기준 좌표계)를 말하고, 오른쪽 아래 첨자는 Target frame(목표 좌표계)를 말한다. 이를 Homogeneous transform matrix(동차 변환 행렬)[4] 로 나타내면 아래와 같다.
+
+존재하지 않는 이미지입니다.
+만약 로봇에 장착된 라이다 센서로 부터 받아온 장애물의 위치를 map 좌표계를 기준으로 확인하고 싶다면, 라이다 좌표계와 장애물의 좌표계를 정의하고 동차 변환 행렬을 계산한다. 그다음 아래 수식과 같이 계산된 동차 변환 행렬의 연속적인 곱을 이용하면 map 좌표계 기준 장애물의 위치를 얻을 수 있다.
+
+존재하지 않는 이미지입니다.
+이와 같은 방식을 사용해서 모바일 로봇의 위치 뿐만 아니라 로봇에 서로 다른 위치에 장착된 센서들의 값을 동일한 좌표계 기준으로 변환할 수 있기에 좌표 변환은 로봇을 개발하는데 가장 숙지해야할 개념 중에 하나이다.
+
+​
+
+2. tf 와 tf2
+
+tf (transform)[5]는 ROS의 노드 기반 프로그래밍으로 인해 분산된 좌표계들의 상관관계를 트리 구조로 관리하고 이를 이용하여 특정 시간의 두 좌표간에 정의된 동차 변환 행렬을 반환해주는 공통된 API를 제공하는 것을 목표로 OSRF 의 Tully Foote 의 주도하에 개발되었다.[그림 2 참조]
+
+존재하지 않는 이미지입니다.
+[그림 2, PR2의 tf 도식도]
+
+tf 라이브러리의 특징[6, 7]은 아래와 같다.
+
+1) 분산 시스템을 기반으로하여 모든 ROS 컴포넌트 지원
+
+2) 특정 시간에 서로 다른 좌표간의 데이터 변환만을 제공
+
+3) 현재 시간 이외의 타임 스탬프가 지정된 데이터에 대한 쿼리[47] 지원
+
+4) 데이터 변환을 위해 좌표계의 이름만 확인
+
+5) 방향성 트리 구조를 이용하고 이는 사용자가 관리할 필요 없도록 지원
+
+6) 코어 라이브러리는 ROS 디팬던시가 없음
+
+7) 스레드 세이프한 인터페이스 제공
+
+8) 멀티 로봇 지원
+
+​
+
+tf2 [8, 9, 10, 11] 는 ROS Hydro 이후로 개발이 중단된 tf 의 두번째 버전으로 라이브러리를 ROS 컴포넌트와 non-ROS 컴포넌트로 분리하고, API에 C++ 템플릿 문법을 적용하여 자료형을 추상화 하였다. 그리고 효율성을 높이기 위해 ROS 의 Service을 기반으로한 원격 쿼리 API를 지원하며 해당 버전부터는 ROS 에서 사용가능한 Python API[12] 와 , static transforms[13] 을 제공한다. ROS 1에서는 tf 와 tf2 를 모두 사용할 수 있지만, ROS 2 부터는 tf2 만을 지원한다.[14]
+
+사용자는 tf2 를 사용하여 두 좌표(header frame 과 child frame)간의 위치와 회전 데이터를 일정 주기마다 전달(Broadcasting)할 수 있고, 특정 시간에 두 좌표(source frame 과 target frame)간의 동차 변환 행렬을 얻을 수 있다.(Listening)
+
+​
+
+3. 데모코드
+
+ROS 2의 tf2 를 사용하여 좌표 변환 행렬을 얻는 코드에 대해 알아보자. tf2 는 geometry2[14] 패키지에 포함되어 있으며 코어 라이브러리[15]는 C++ 언어로 개발되었다. geometry2 패키지에는 tf2 와 함께 자주 사용하는 geometry_msg[16], sensor_msg[17] 를 위한 함수를 제공하고, bullet[18], eigen[19], kdl[20], pcl[21] 라이브러리와 함께 사용할 수 있는 함수 또한 제공하고 있어 개발자가 따로 함수를 작성하지 않고 쉽게 사용할 수 있다. tf2_ros[22] 패키지는 좌표 변환 정보를 요청하고 이를 반환해주는 Buffer[23], /tf 와 /tf_static 토픽을 구독하여 Buffer에 저장하는 TransformListener[24], /tf 토픽을 통해 동적 좌표계의 정보를 제공하는 TransformBroadcaster[25], /tf_static 토픽을 통해 정적 좌표계의 정보를 제공하는 StaticTransformBroadcaster[26]로 이루어져 있다. tf2_ros 는 C++로 작성되어 있어 rclcpp에서 사용 가능하며, tf2_py[12] 를 통해 tf2의 Python API를 지원하기에 이를 이용하여 rclpy에서도 tf2_ros를 사용할 수 있다. 아래 코드[27, 28]를 통해 pan, tilt, end-effector 좌표계를 정의하고, tf2 를 사용하여 좌표 변환이 어떻게 이루어 지는지 확인해보자.
+
+​
+
+3.1. rclcpp
+
+C++로 작성된 broadcaster, listener, static_broadcaster 노드를 통해 rclcpp와 tf2_ros를 이용한 좌표변환에 대해 알아보자.
+
+​
+
+3.1.1 broadcaster
+
+tf2_rclcpp_example/include/broadcaster.hpp
+
+// Copyright 2021 OROCA
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+#ifndef BROADCASTER_HPP_
+#define BROADCASTER_HPP_
+
+#include <cmath>
+#include <memory>
+#include <vector>
+
+#include "geometry_msgs/msg/transform_stamped.hpp"
+#include "rclcpp/rclcpp.hpp"
+#include "std_srvs/srv/set_bool.hpp"
+#include "tf2/LinearMath/Quaternion.h"
+#include "tf2_ros/transform_broadcaster.h"
+
+
+class Arm : public rclcpp::Node
+{
+public:
+  Arm();
+
+private:
+  rclcpp::TimerBase::SharedPtr timer_;
+
+  std::shared_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_;
+  std::vector<geometry_msgs::msg::TransformStamped> tf_stamped_list_;
+
+  rclcpp::Service<std_srvs::srv::SetBool>::SharedPtr move_service_server_;
+
+  bool move_;
+};
+#endif  // BROADCASTER_HPP_
+tf2_rclcpp_example/src/broadcaster.cpp
+
+// Copyright 2021 OROCA
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+#include <memory>
+
+#include "broadcaster.hpp"
+
+using namespace std::chrono_literals;
+
+Arm::Arm()
+: rclcpp::Node("arm"),
+  move_(true)
+{
+  RCLCPP_INFO(this->get_logger(), "Move Arm!");
+  tf_broadcaster_ = std::make_shared<tf2_ros::TransformBroadcaster>(this);
+
+  auto set_move =
+    [this](const std::shared_ptr<std_srvs::srv::SetBool::Request> request,
+      std::shared_ptr<std_srvs::srv::SetBool::Response> response) -> void
+    {
+      move_ = request->data;
+
+      if (request->data) {
+        response->message = "Move Arm!";
+      } else {
+        response->message = "Stop Arm!";
+      }
+    };
+  move_service_server_ = create_service<std_srvs::srv::SetBool>("move", set_move);
+
+  auto broadcast =
+    [this]() -> void
+    {
+      static double rad = 0.0;
+
+      tf_stamped_list_.clear();
+
+      geometry_msgs::msg::TransformStamped tf_stamped;
+
+      tf_stamped.header.stamp = this->now();
+      tf_stamped.header.frame_id = "world";
+      tf_stamped.child_frame_id = "pan";
+      tf_stamped.transform.translation.x = 0.0;
+      tf_stamped.transform.translation.y = 0.0;
+      tf_stamped.transform.translation.z = 0.0;
+
+      tf2::Quaternion quaternion;
+      quaternion.setRPY(0, 0, 2 * sin(rad));
+
+      tf_stamped.transform.rotation.x = quaternion.x();
+      tf_stamped.transform.rotation.y = quaternion.y();
+      tf_stamped.transform.rotation.z = quaternion.z();
+      tf_stamped.transform.rotation.w = quaternion.w();
+
+      tf_stamped_list_.push_back(tf_stamped);
+
+      tf_stamped.header.frame_id = "pan";
+      tf_stamped.child_frame_id = "tilt";
+      tf_stamped.transform.translation.x = 0.0;
+      tf_stamped.transform.translation.y = 0.0;
+      tf_stamped.transform.translation.z = 0.3;
+
+      quaternion.setRPY(0, 2 * sin(rad), 0);
+
+      tf_stamped.transform.rotation.x = quaternion.x();
+      tf_stamped.transform.rotation.y = quaternion.y();
+      tf_stamped.transform.rotation.z = quaternion.z();
+      tf_stamped.transform.rotation.w = quaternion.w();
+
+      tf_stamped_list_.push_back(tf_stamped);
+
+      tf_stamped.header.frame_id = "tilt";
+      tf_stamped.child_frame_id = "end-effector";
+      tf_stamped.transform.translation.x = 0.0;
+      tf_stamped.transform.translation.y = 0.0;
+      tf_stamped.transform.translation.z = 0.1;
+
+      quaternion.setRPY(0, 0, 0);
+
+      tf_stamped.transform.rotation.x = quaternion.x();
+      tf_stamped.transform.rotation.y = quaternion.y();
+      tf_stamped.transform.rotation.z = quaternion.z();
+      tf_stamped.transform.rotation.w = quaternion.w();
+
+      tf_stamped_list_.push_back(tf_stamped);
+
+      tf_broadcaster_->sendTransform(tf_stamped_list_);
+
+      if (move_) {
+        rad += 0.01;
+      }
+    };
+  timer_ = this->create_wall_timer(10ms, broadcast);
+}
+
+int main(int argc, char * argv[])
+{
+  setvbuf(stdout, NULL, _IONBF, BUFSIZ);
+
+  rclcpp::init(argc, argv);
+
+  auto node = std::make_shared<Arm>();
+
+  rclcpp::spin(node);
+
+  rclcpp::shutdown();
+
+  return 0;
+}
+Arm 클래스는 world, pan, tilt, end-effector 좌표계에 대한 정보를 geometry_msgs::msg::TransformStamped[29] 타입에 담아서 tf2_ros::TransformBroadcaster를 통해 전달한다. tf2_ros::TransformBroadcaster는 /tf 토픽 퍼블리셔 등록을 위해 rclcpp::Node 객체를 초기화 함수에 필요로 한다. 
+
+​
+
+서비스 서버는 std_srvs::srv::SetBool 데이터 타입을 가지며 데이터가 True 일때는 팔을 움직이고, False 일때는 팔을 멈추도록 한다.
+
+// ... 코드 생략 ...
+Arm::Arm()
+: rclcpp::Node("arm"),
+  move_(true)
+{
+  RCLCPP_INFO(this->get_logger(), "Move Arm!");
+  tf_broadcaster_ = std::make_shared<tf2_ros::TransformBroadcaster>(this);
+
+  auto set_move =
+    [this](const std::shared_ptr<std_srvs::srv::SetBool::Request> request,
+      std::shared_ptr<std_srvs::srv::SetBool::Response> response) -> void
+    {
+      move_ = request->data;
+
+      if (request->data) {
+        response->message = "Move Arm!";
+      } else {
+        response->message = "Stop Arm!";
+      }
+    };
+  move_service_server_ = create_service<std_srvs::srv::SetBool>("move", set_move);
+// ... 코드 생략 ...
+broadcast 콜백함수에서는 geometry_msgs::msg::TransformStamped 메시지를 통해 두 좌표계 간의 위치와 회전 정보를 sendTransform 함수를 이용하여 특정 주기마다 업데이트 한다. 각 좌표계의 위치는 고정이지만, pan 좌표계는 yaw 각이, tilt 좌표계를 pitch 각이 일정하게 변화하도록 하였다.
+
+​
+
+tf2::Quaternion[30, 31] 은 쿼터니안[32]을 다루는 클래스로 euler 각[33] 을 쿼터니안으로 쉽게 변환할 수 있는 setRPY() 함수를 제공한다.
+
+// ... 코드 생략 ...
+      geometry_msgs::msg::TransformStamped tf_stamped;
+
+      tf_stamped.header.stamp = this->now();
+      tf_stamped.header.frame_id = "world";
+      tf_stamped.child_frame_id = "pan";
+      tf_stamped.transform.translation.x = 0.0;
+      tf_stamped.transform.translation.y = 0.0;
+      tf_stamped.transform.translation.z = 0.0;
+
+      tf2::Quaternion quaternion;
+      quaternion.setRPY(0, 0, 2 * sin(rad));
+
+      tf_stamped.transform.rotation.x = quaternion.x();
+      tf_stamped.transform.rotation.y = quaternion.y();
+      tf_stamped.transform.rotation.z = quaternion.z();
+      tf_stamped.transform.rotation.w = quaternion.w();
+
+      tf_stamped_list_.push_back(tf_stamped);
+
+// ... 코드 생략 ...
+
+      tf_broadcaster_->sendTransform(tf_stamped_list_);
+
+      if (move_) {
+        rad += 0.01;
+      }
+    };
+  timer_ = this->create_wall_timer(10ms, broadcast);
+// ... 코드 생략 ...
+3.1.2 listener
+
+tf2_rclcpp_example/include/listener.hpp
+
+// Copyright 2021 OROCA
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+#ifndef LISTENER_HPP_
+#define LISTENER_HPP_
+
+#include <cmath>
+#include <memory>
+#include <string>
+
+#include "geometry_msgs/msg/transform_stamped.hpp"
+#include "rclcpp/rclcpp.hpp"
+#include "tf2/LinearMath/Transform.h"
+#include "tf2_geometry_msgs/tf2_geometry_msgs.h"
+#include "tf2_ros/transform_listener.h"
+
+#define RAD_TO_DEG 180 / M_PI
+#define DEG_TO_RAD M_PI / 180
+
+
+class Listener : public rclcpp::Node
+{
+public:
+  Listener();
+
+private:
+  rclcpp::TimerBase::SharedPtr timer_;
+
+  tf2_ros::Buffer tf_buffer_;
+  tf2_ros::TransformListener tf_listener_;
+};
+#endif  // LISTENER_HPP_
+tf2_rclcpp_example/src/listener.cpp
+
+// Copyright 2021 OROCA
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+#include <memory>
+
+#include "listener.hpp"
+
+using namespace std::chrono_literals;
+
+Listener::Listener()
+: rclcpp::Node("tf2_listener"),
+  tf_buffer_(this->get_clock()),
+  tf_listener_(tf_buffer_)
+{
+  auto listen =
+    [this]() -> void
+    {
+      geometry_msgs::msg::TransformStamped tf_world_pan;
+      geometry_msgs::msg::TransformStamped tf_pan_world;
+
+      try {
+        tf_world_pan = tf_buffer_.lookupTransform("pan", "world", tf2::timeFromSec(0));
+
+        tf2::Quaternion quaternion(
+          tf_world_pan.transform.rotation.x,
+          tf_world_pan.transform.rotation.y,
+          tf_world_pan.transform.rotation.z,
+          tf_world_pan.transform.rotation.w);
+
+        tf2::Matrix3x3 world_pan_mat(quaternion);
+        double roll, pitch, yaw;
+        world_pan_mat.getRPY(roll, pitch, yaw);
+
+        RCLCPP_INFO(
+          this->get_logger(),
+          "tf_world_pan :\n\tOrigin %.3f %.3f %.3f\n\tRotation(deg) %.3f %.3f %.3f",
+          tf_world_pan.transform.translation.x,
+          tf_world_pan.transform.translation.y,
+          tf_world_pan.transform.translation.z,
+          roll * RAD_TO_DEG,
+          pitch * RAD_TO_DEG,
+          yaw * RAD_TO_DEG);
+
+        tf_pan_world = tf_buffer_.lookupTransform("world", "pan", tf2::timeFromSec(0));
+
+        tf2::Transform tf_inverse;
+        tf2::fromMsg(tf_pan_world.transform, tf_inverse);
+
+        tf_inverse = tf_inverse.inverse();
+
+        tf2::Matrix3x3 pan_world_mat(tf_inverse.getRotation());
+        pan_world_mat.getRPY(roll, pitch, yaw);
+
+        RCLCPP_INFO(
+          this->get_logger(),
+          "tf_pan_world(inverse) :\n\tOrigin %.3f %.3f %.3f\n\tRotation(deg) %.3f %.3f %.3f",
+          tf_pan_world.transform.translation.x,
+          tf_pan_world.transform.translation.y,
+          tf_pan_world.transform.translation.z,
+          roll * RAD_TO_DEG,
+          pitch * RAD_TO_DEG,
+          yaw * RAD_TO_DEG);
+      } catch (tf2::TransformException & ex) {
+        RCLCPP_WARN(this->get_logger(), "%s", ex.what());
+        rclcpp::sleep_for(1s);
+      }
+    };
+
+  timer_ = this->create_wall_timer(500ms, listen);
+}
+
+int main(int argc, char * argv[])
+{
+  setvbuf(stdout, NULL, _IONBF, BUFSIZ);
+
+  rclcpp::init(argc, argv);
+
+  auto node = std::make_shared<Listener>();
+
+  rclcpp::spin(node);
+
+  rclcpp::shutdown();
+
+  return 0;
+}
+Listener 클래스는 tf2_ros::TransformListener를 통해 /tf 토픽을 구독하고, tf2_ros::Buffer로 두 좌표계간의 가장 최근의 동차 변환 행렬을 얻어온다.
+
+​
+
+tf2_ros::Buffer 는 rclcpp::Node 에서 사용하는 시계로 초기화하여 노드와 동일한 시간의 정보를 가져올 수 있도록 하고, tf2_ros::TransformListener는 tf2_ros::Buffer 객체를 받아가서 /tf 토픽을 통해 얻은 정보를 저장한다.
+
+// ... 코드 생략 ...
+Listener::Listener()
+: rclcpp::Node("tf2_listener"),
+  tf_buffer_(this->get_clock()),
+  tf_listener_(tf_buffer_)
+{
+// ... 코드 생략 ...
+tf2 는 try-catch 구문을 이용하여 만약 특정 시간의 데이터 변환 결과를 반환할 수 없다면 예외 처리를 할 수 있는 기능을 지원한다. try 함수 안에 lookupTransform 함수를 보자. lookupTrasform 함수는 target_frame(목표 좌표계) 과 source_frame(기준 좌표계) 그리고 시간을 매개변수로 가진다. 시간을 0 으로 설정하면 가장 최근의 데이터 변환 결과를 반환해 준다.[34]
+
+​
+
+첫번째 변환 데이터는 pan 좌표계를 기준으로 본 world 좌표계의 동차 변환 행렬이고, 두번째 변환 데이터는 world 좌표계를 기준으로 본 pan 좌표계의 동차 변환 행렬이다. 동차 변환 행렬의 회전각을 나타내는 쿼터니안은 tf2::Matrix3x3[35]을 이용해서 euler 각으로 변환할수 있다. tf2::Transform[36] 클래스는 동차 변환 행렬 데이터의 역행렬을 반환해주는 함수 inverse()를 제공한다. 이를 이용하여 tf_world_pan으로 얻은 동차 변환 행렬의 회전각과 tf_pan_world의 역행렬로 얻은 동차 변환 행렬의 회전각이 일치하는지 로그로 확인해보자.
+
+// ... 코드 생략 ...
+      try {
+        tf_world_pan = tf_buffer_.lookupTransform("pan", "world", tf2::timeFromSec(0));
+
+        tf2::Quaternion quaternion(
+          tf_world_pan.transform.rotation.x,
+          tf_world_pan.transform.rotation.y,
+          tf_world_pan.transform.rotation.z,
+          tf_world_pan.transform.rotation.w);
+
+        tf2::Matrix3x3 world_pan_mat(quaternion);
+        double roll, pitch, yaw;
+        world_pan_mat.getRPY(roll, pitch, yaw);
+
+        RCLCPP_INFO(
+          this->get_logger(),
+          "tf_world_pan :\n\tOrigin %.3f %.3f %.3f\n\tRotation(deg) %.3f %.3f %.3f",
+          tf_world_pan.transform.translation.x,
+          tf_world_pan.transform.translation.y,
+          tf_world_pan.transform.translation.z,
+          roll * RAD_TO_DEG,
+          pitch * RAD_TO_DEG,
+          yaw * RAD_TO_DEG);
+
+        tf_pan_world = tf_buffer_.lookupTransform("world", "pan", tf2::timeFromSec(0));
+
+        tf2::Transform tf_inverse;
+        tf2::fromMsg(tf_pan_world.transform, tf_inverse);
+
+        tf_inverse = tf_inverse.inverse();
+
+        tf2::Matrix3x3 pan_world_mat(tf_inverse.getRotation());
+        pan_world_mat.getRPY(roll, pitch, yaw);
+
+        RCLCPP_INFO(
+          this->get_logger(),
+          "tf_pan_world(inverse) :\n\tOrigin %.3f %.3f %.3f\n\tRotation(deg) %.3f %.3f %.3f",
+          tf_pan_world.transform.translation.x,
+          tf_pan_world.transform.translation.y,
+          tf_pan_world.transform.translation.z,
+          roll * RAD_TO_DEG,
+          pitch * RAD_TO_DEG,
+          yaw * RAD_TO_DEG);
+      } catch (tf2::TransformException & ex) {
+        RCLCPP_WARN(this->get_logger(), "%s", ex.what());
+        rclcpp::sleep_for(1s);
+      }
+    };
+// ... 코드 생략 ...
+3.1.3 static broadcaster
+
+tf2_rclcpp_example/include/static_broadcaster.hpp
+
+// Copyright 2021 OROCA
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+#ifndef STATIC_BROADCASTER_HPP_
+#define STATIC_BROADCASTER_HPP_
+
+#include <memory>
+
+#include "geometry_msgs/msg/transform_stamped.hpp"
+#include "rclcpp/rclcpp.hpp"
+#include "tf2/LinearMath/Quaternion.h"
+#include "tf2_ros/static_transform_broadcaster.h"
+
+
+class Base : public rclcpp::Node
+{
+public:
+  Base();
+
+private:
+  std::unique_ptr<tf2_ros::StaticTransformBroadcaster> static_tf_broadcaster_;
+};
+#endif  // STATIC_BROADCASTER_HPP_
+tf2_rclcpp_example/src/static_broadcaster.cpp
+
+// Copyright 2021 OROCA
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+#include <memory>
+
+#include "static_broadcaster.hpp"
+
+using namespace std::chrono_literals;
+
+Base::Base()
+: rclcpp::Node("base")
+{
+  RCLCPP_INFO(this->get_logger(), "Make static tf (world->base)");
+  static_tf_broadcaster_ = std::make_unique<tf2_ros::StaticTransformBroadcaster>(this);
+
+  geometry_msgs::msg::TransformStamped tf_stamped;
+
+  tf_stamped.header.stamp = this->now();
+  tf_stamped.header.frame_id = "world";
+  tf_stamped.child_frame_id = "base";
+  tf_stamped.transform.translation.x = 0.0;
+  tf_stamped.transform.translation.y = 0.3;
+  tf_stamped.transform.translation.z = 0.3;
+
+  tf2::Quaternion q;
+  q.setRPY(0, 0, 1.57);
+
+  tf_stamped.transform.rotation.x = q.x();
+  tf_stamped.transform.rotation.y = q.y();
+  tf_stamped.transform.rotation.z = q.z();
+  tf_stamped.transform.rotation.w = q.w();
+
+  static_tf_broadcaster_->sendTransform(tf_stamped);
+}
+
+int main(int argc, char * argv[])
+{
+  setvbuf(stdout, NULL, _IONBF, BUFSIZ);
+
+  rclcpp::init(argc, argv);
+
+  auto node = std::make_shared<Base>();
+
+  rclcpp::spin(node);
+
+  rclcpp::shutdown();
+
+  return 0;
+}
+Base 클래스는 world 좌표계를 기준으로 변화하지 않는 base 좌표계를 정의한다. Arm 클래스는 일정 주기마다 좌표 변환 정보가 변화하여 tf2_ros::TransformBroadcaster 클래스를 사용하였다. 하지만 Base 클래스는 좌표 변환 정보가 고정이기에 tf2_ros::StaticTransformBroadcaster 를 사용하는게 더 효율적이다.
+
+​
+
+tf2_ros::StaticTransformBroadcaster 는 rclcpp::Node 객체를 매개변수로 가지고 있어서 전달받은 인자를 통해 /tf_static 퍼블리셔를 통해 변환 정보를 발간한다. 정보의 업데이트가 필요하지 않기에 타이머를 따로 만들지 않아도 된다.
+
+// ... 코드 생략 ...
+  static_tf_broadcaster_ = std::make_unique<tf2_ros::StaticTransformBroadcaster>(this);
+
+  geometry_msgs::msg::TransformStamped tf_stamped;
+
+  tf_stamped.header.stamp = this->now();
+  tf_stamped.header.frame_id = "world";
+  tf_stamped.child_frame_id = "base";
+  tf_stamped.transform.translation.x = 0.0;
+  tf_stamped.transform.translation.y = 0.3;
+  tf_stamped.transform.translation.z = 0.3;
+
+  tf2::Quaternion q;
+  q.setRPY(0, 0, 1.57);
+
+  tf_stamped.transform.rotation.x = q.x();
+  tf_stamped.transform.rotation.y = q.y();
+  tf_stamped.transform.rotation.z = q.z();
+  tf_stamped.transform.rotation.w = q.w();
+
+  static_tf_broadcaster_->sendTransform(tf_stamped);
+// ... 코드 생략 ...
+3.1.4 실행
+
+먼저 아래 명령어를 통해 broadcaster 노드를 실행시켜서 tf 정보를 발간하자. 발간된 tf 정보는 RViz2를 통해 시각화 시킬 수 있다. 아래 명령어를 통해 이를 확인해 보자. RViz2가 실행되면 pan, tilt 좌표가 실시간으로 변화하는 것을 확인할 수 있다.[그림 3 참조]
+
+$ ros2 run tf2_rclcpp_example broadcaster
+[INFO] [1618185829.222141731] [arm]: Move Arm!
+$ rviz2 -d ~/robot_ws/src/ros2-seminar-examples/tf2_rclcpp_example/rviz/arm.rviz
+존재하지 않는 이미지입니다.
+[그림 3, RViz2 TF visualization]
+
+tf2_tools[37] 를 사용하여 발간되고 있는 tf 정보를 확인해볼 수도 있다.[그림 4 참조]
+
+$ ros2 run tf2_tools view_frames.py
+$ evince frames.pdf
+존재하지 않는 이미지입니다.
+[그림 4. TF frames]
+
+다음은 listener 노드를 실행시켜서 broadcaster를 통해 발간된 데이터 변환 결과를 확인해 보자. 앞서 코드에서 설명했듯이 tf_world_pan 동차 변환 행렬이 tf_pan_world 동차 변환 행렬의 인버스 값이 일치하는 것을 확인할 수 있다.
+
+$ ros2 run tf2_rclcpp_example listener
+[INFO] [1618186403.206953890] [tf2_listener]: tf_world_pan :
+	Origin 0.000 0.000 0.000
+	Rotation(deg) 0.000 -0.000 64.918
+[INFO] [1618186403.207349465] [tf2_listener]: tf_pan_world(inverse) :
+	Origin 0.000 0.000 0.000
+	Rotation(deg) -0.000 -0.000 64.918
+[INFO] [1618186403.706787778] [tf2_listener]: tf_world_pan :
+	Origin 0.000 0.000 0.000
+	Rotation(deg) 0.000 -0.000 11.699
+[INFO] [1618186403.707035247] [tf2_listener]: tf_pan_world(inverse) :
+	Origin 0.000 0.000 0.000
+	Rotation(deg) -0.000 -0.000 11.699
+[INFO] [1618186404.206799876] [tf2_listener]: tf_world_pan :
+	Origin 0.000 0.000 0.000
+	Rotation(deg) 0.000 0.000 -44.385
+[INFO] [1618186404.207048746] [tf2_listener]: tf_pan_world(inverse) :
+	Origin 0.000 0.000 0.000
+	Rotation(deg) 0.000 0.000 -44.385
+[INFO] [1618186404.706807378] [tf2_listener]: tf_world_pan :
+	Origin 0.000 0.000 0.000
+	Rotation(deg) 0.000 0.000 -89.601
+[INFO] [1618186404.707030264] [tf2_listener]: tf_pan_world(inverse) :
+	Origin 0.000 0.000 0.000
+	Rotation(deg) 0.000 0.000 -89.601
+[INFO] [1618186405.206931207] [tf2_listener]: tf_world_pan :
+	Origin 0.000 0.000 0.000
+	Rotation(deg) 0.000 0.000 -112.880
+[INFO] [1618186405.207156104] [tf2_listener]: tf_pan_world(inverse) :
+	Origin 0.000 0.000 0.000
+	Rotation(deg) 0.000 0.000 -112.880
+[INFO] [1618186405.706846855] [tf2_listener]: tf_world_pan :
+	Origin 0.000 0.000 0.000
+	Rotation(deg) 0.000 0.000 -108.522
+[INFO] [1618186405.707034040] [tf2_listener]: tf_pan_world(inverse) :
+	Origin 0.000 0.000 0.000
+	Rotation(deg) 0.000 0.000 -108.522
+listener 노드를 직접 작성하지 않고, tf2_ros 에서 제공하는 노드를 통해 tf 정보를 얻어올 수도 있다.
+
+​
+
+먼저 tf2_echo[38] 노드를 통해 pan 좌표계를 기준으로 tilt 좌표계의 tf를 확인해보자. tf2_echo 노드는 첫번째 매개변수로 source_frame, 두번째 매개변수로 target_frame, 세번째 매개변수로 echo_rate 를 받는다.
+
+$ ros2 run tf2_ros tf2_echo pan tilt 1.0
+At time 1618186455.145020251
+- Translation: [0.000, 0.000, 0.300]
+- Rotation: in Quaternion [0.000, -0.770, 0.000, 0.638]
+At time 1618186456.145076801
+- Translation: [0.000, 0.000, 0.300]
+- Rotation: in Quaternion [0.000, -0.769, 0.000, 0.640]
+At time 1618186457.145095539
+- Translation: [0.000, 0.000, 0.300]
+- Rotation: in Quaternion [0.000, -0.069, 0.000, 0.998]
+At time 1618186458.145140401
+- Translation: [0.000, 0.000, 0.300]
+- Rotation: in Quaternion [0.000, 0.719, 0.000, 0.695]
+At time 1618186459.145240623
+- Translation: [0.000, 0.000, 0.300]
+- Rotation: in Quaternion [0.000, 0.805, 0.000, 0.593]
+At time 1618186460.145264209
+- Translation: [0.000, 0.000, 0.300]
+- Rotation: in Quaternion [0.000, 0.208, 0.000, 0.978]
+At time 1618186461.145276503
+- Translation: [0.000, 0.000, 0.300]
+- Rotation: in Quaternion [0.000, -0.652, 0.000, 0.759]
+tf2_monitor[39] 노드는 등록된 모든 좌표계의 이름과 가장 최근의 좌표 변환 데이터의 타임스탬프와 현재 시간과의 차이의 평균과 그 최대값을 알려 준다.
+
+$ ros2 run tf2_ros tf2_monitor
+Gathering data on all frames for 10 seconds...
+
+
+
+RESULTS: for all Frames
+
+Frames:
+Frame: end-effector, published by <no authority available>, Average Delay: 0.000581344, Max Delay: 0.00149322
+Frame: pan, published by <no authority available>, Average Delay: 0.000577336, Max Delay: 0.00149035
+Frame: tilt, published by <no authority available>, Average Delay: 0.000579916, Max Delay: 0.0014925
+
+All Broadcasters:
+Node: <no authority available> 100.096 Hz, Average Delay: 0.000579532 Max Delay: 0.00149202
+
+
+
+RESULTS: for all Frames
+
+Frames:
+Frame: end-effector, published by <no authority available>, Average Delay: 0.000575609, Max Delay: 0.00202084
+Frame: pan, published by <no authority available>, Average Delay: 0.000566233, Max Delay: 0.00201392
+Frame: tilt, published by <no authority available>, Average Delay: 0.000571826, Max Delay: 0.00201797
+
+All Broadcasters:
+Node: <no authority available> 100.095 Hz, Average Delay: 0.000571223 Max Delay: 0.00201758
+만약 로봇의 움직임을 멈추고 싶다면 아래 명령어를 이용하자.
+
+$ ros2 service call move std_srvs/srv/SetBool "data: false"
+아래 명령어를 통해 static_broadcaster 노드를 실행시키고 RViz2를 통해 tf 정보를 확인해보면 고정된 좌표계를 확인할 수 있다.[그림 5 참조]
+
+$ ros2 run tf2_rclcpp_example static_broadcaster
+$ rviz2 -d ~/robot_ws/src/ros2-seminar-examples/tf2_rclcpp_example/rviz/arm.rviz
+존재하지 않는 이미지입니다.
+[그림 5. RViz static tf visualization]
+
+tf2_ros::StaticTransformBroadcaster 를 사용한 클래스를 직접 작성하지 않고도 아래 미리 작성된 static_transform_publisher 노드를 실행시켜 고정 좌표계를 등록할 수 있다. 인자는 x, y, z, roll, pitch, yaw, source_frame, target_frame 순서이다.[그림 6 참조]
+
+$ ros2 run tf2_ros static_transform_publisher 0.0 0.0 0.3 0.5 0.1 -1.0 base top
+존재하지 않는 이미지입니다.
+[그림 6. RViz static tf visualization]
+
+3.2. rclpy
+
+Python로 작성된 broadcaster, listener, static_broadcaster 노드를 통해 rclcpp와 tf2_ros를 이용한 좌표변환에 대해 알아보자. 앞서 C++ 데모코드 내용과 거의 일치하지만, Python API를 지원하지 않는 tf2 의 LinearMath[40] 는 직접 작성하거나 포함시키지 않았다.
+
+​
+
+3.2.1 broadcaster
+
+tf2_rclpy_example/tf2_rclpy_example/broadcaster.py
+
+# Copyright 2021 OROCA
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import math
+
+from geometry_msgs.msg import TransformStamped
+import rclpy
+from rclpy.node import Node
+from std_srvs.srv import SetBool
+from tf2_rclpy_example.conversions import euler_to_quaternion
+from tf2_ros.transform_broadcaster import TransformBroadcaster
+
+
+class Arm(Node):
+
+    def __init__(self):
+        super().__init__('arm')
+
+        self.get_logger().info('Move Arm!')
+        self.move = True
+        self.rad = 0.0
+        self.tf_broadcaster = TransformBroadcaster(self)
+
+        self.move_service_server = self.create_service(
+            SetBool,
+            'move',
+            self.set_move)
+
+        self.timer = self.create_timer(0.010, self.broadcast)
+
+    def set_move(self, request, response):
+        self.move = request.data
+
+        if request.data is True:
+            response.message = 'Move Arm!'
+        else:
+            response.message = 'Stop Arm!'
+
+    def broadcast(self):
+        tf_stamped_list = []
+        tf_stamped = TransformStamped()
+
+        now = self.get_clock().now()
+        tf_stamped.header.stamp = now.to_msg()
+
+        tf_stamped.header.frame_id = 'world'
+        tf_stamped.child_frame_id = 'pan'
+        tf_stamped.transform.translation.x = 0.0
+        tf_stamped.transform.translation.y = 0.0
+        tf_stamped.transform.translation.z = 0.0
+
+        quaternion = euler_to_quaternion(0.0, 0.0, 2.0 * math.sin(self.rad))
+
+        tf_stamped.transform.rotation.x = quaternion[0]
+        tf_stamped.transform.rotation.y = quaternion[1]
+        tf_stamped.transform.rotation.z = quaternion[2]
+        tf_stamped.transform.rotation.w = quaternion[3]
+
+        tf_stamped_list.append(tf_stamped)
+        tf_stamped = TransformStamped()
+
+        tf_stamped.header.stamp = now.to_msg()
+
+        tf_stamped.header.frame_id = 'pan'
+        tf_stamped.child_frame_id = 'tilt'
+        tf_stamped.transform.translation.x = 0.0
+        tf_stamped.transform.translation.y = 0.0
+        tf_stamped.transform.translation.z = 0.3
+
+        quaternion = euler_to_quaternion(0.0, 2.0 * math.sin(self.rad), 0.0)
+
+        tf_stamped.transform.rotation.x = quaternion[0]
+        tf_stamped.transform.rotation.y = quaternion[1]
+        tf_stamped.transform.rotation.z = quaternion[2]
+        tf_stamped.transform.rotation.w = quaternion[3]
+
+        tf_stamped_list.append(tf_stamped)
+        tf_stamped = TransformStamped()
+
+        tf_stamped.header.stamp = now.to_msg()
+
+        tf_stamped.header.frame_id = 'tilt'
+        tf_stamped.child_frame_id = 'end-effector'
+        tf_stamped.transform.translation.x = 0.0
+        tf_stamped.transform.translation.y = 0.0
+        tf_stamped.transform.translation.z = 0.0
+
+        quaternion = euler_to_quaternion(0.0, 0.0, 0.0)
+
+        tf_stamped.transform.rotation.x = quaternion[0]
+        tf_stamped.transform.rotation.y = quaternion[1]
+        tf_stamped.transform.rotation.z = quaternion[2]
+        tf_stamped.transform.rotation.w = quaternion[3]
+
+        tf_stamped_list.append(tf_stamped)
+
+        self.tf_broadcaster.sendTransform(tf_stamped_list)
+
+        if self.move is True:
+            self.rad += 0.01
+
+
+def main():
+    rclpy.init()
+    try:
+        arm = Arm()
+        try:
+            rclpy.spin(arm)
+        except KeyboardInterrupt:
+            arm.get_logger().info('Keyboard Interrupt (SIGINT)')
+        finally:
+            arm.move_service_server.destroy()
+            arm.destroy_node()
+    finally:
+        rclpy.shutdown()
+
+
+if __name__ == '__main__':
+    main()
+rclpy::Timer를 통해 일정 주기마다 콜백되는 broadcast 함수에 geometry_msgs::msg::TransformStamped[ ] 타입을 선언하고 두 좌표계 간의 위치와 회전 정보를 업데이트 한다. 각 좌표계의 위치는 고정이지만 pan 좌표계는 yaw 각이, tilt 좌표계를 pitch 각이 일정하게 변화하도록 하였다. 정의된 변환 정보들은 sendTransform 함수를 통해 /tf 토픽으로 발간할 수 있다.
+
+​
+
+tf2::Quaternion 은 Python API를 지원하지 않아서 euler_to_quaternion 함수[41] 를 만들어서 사용하였다.
+
+	# ... 코드 생략 ...	
+    def broadcast(self):
+        tf_stamped_list = []
+        tf_stamped = TransformStamped()
+
+        now = self.get_clock().now()
+        tf_stamped.header.stamp = now.to_msg()
+
+        tf_stamped.header.frame_id = 'world'
+        tf_stamped.child_frame_id = 'pan'
+        tf_stamped.transform.translation.x = 0.0
+        tf_stamped.transform.translation.y = 0.0
+        tf_stamped.transform.translation.z = 0.0
+
+        quaternion = euler_to_quaternion(0.0, 0.0, 2.0 * math.sin(self.rad))
+
+        tf_stamped.transform.rotation.x = quaternion[0]
+        tf_stamped.transform.rotation.y = quaternion[1]
+        tf_stamped.transform.rotation.z = quaternion[2]
+        tf_stamped.transform.rotation.w = quaternion[3]
+
+        tf_stamped_list.append(tf_stamped)
+        tf_stamped = TransformStamped()
+
+	# ... 코드 생략 ...
+
+        self.tf_broadcaster.sendTransform(tf_stamped_list)
+
+        if self.move is True:
+            self.rad += 0.01
+# ... 코드 생략 ...
+3.2.2 listener
+
+tf2_rclpy_example/tf2_rclpy_example/listener.py
+
+# Copyright 2021 OROCA
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import rclpy
+from rclpy.node import Node
+import rclpy.time
+from tf2_ros import LookupException
+from tf2_ros.buffer import Buffer
+from tf2_ros.transform_listener import TransformListener
+
+
+class Listener(Node):
+
+    def __init__(self):
+        super().__init__('tf2_listener')
+
+        self.tf_buffer = Buffer()
+        self.tf_listener = TransformListener(self.tf_buffer, self)
+
+        self.timer = self.create_timer(0.500, self.listen)
+
+    async def listen(self):
+        try:
+            transform = await self.tf_buffer.lookup_transform_async(
+                'pan',
+                'world',
+                rclpy.time.Time())
+            self.get_logger().info('Got {}'.format(repr(transform)))
+        except LookupException as e:
+            self.get_logger().error('failed to get transform {}'.format(repr(e)))
+
+
+def main():
+    rclpy.init()
+    try:
+        listener = Listener()
+        try:
+            rclpy.spin(listener)
+        except KeyboardInterrupt:
+            listener.get_logger().info('Keyboard Interrupt (SIGINT)')
+        finally:
+            listener.destroy_node()
+    finally:
+        rclpy.shutdown()
+
+
+if __name__ == '__main__':
+    main()
+coroutine[42] 함수 listen의 try-except 구문을 보자. await[43] 표현식이 붙은 lookup_transform_async 함수를 통해 world 좌표계를 기준으로 pan 좌표계의 가장 최신의 tf를 비동기 처리로 반환 받도록 하였다.
+
+# ... 코드 생략 ...	  
+        self.tf_buffer = Buffer()
+        self.tf_listener = TransformListener(self.tf_buffer, self)
+
+        self.timer = self.create_timer(0.500, self.listen)
+
+    async def listen(self):
+        try:
+            transform = await self.tf_buffer.lookup_transform_async(
+                'pan',
+                'world',
+                rclpy.time.Time())
+            self.get_logger().info('Got {}'.format(repr(transform)))
+        except LookupException as e:
+            self.get_logger().error('failed to get transform {}'.format(repr(e)))
+# ... 코드 생략 ...	
+3.2.3 static broadcaster
+
+tf2_rclpy_example/tf2_rclpy_example/static_broadcaster.py
+
+# Copyright 2021 OROCA
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+from geometry_msgs.msg import TransformStamped
+import rclpy
+from rclpy.node import Node
+from tf2_rclpy_example.conversions import euler_to_quaternion
+from tf2_ros.static_transform_broadcaster import StaticTransformBroadcaster
+
+
+class Base(Node):
+
+    def __init__(self):
+        super().__init__('base')
+
+        self.get_logger().info('Make static tf (world->base)')
+        self.static_tf_broadcaster = StaticTransformBroadcaster(self)
+
+        self.static_tf_broadcaster.sendTransform(self.broadcast())
+
+    def broadcast(self):
+        tf_stamped = TransformStamped()
+
+        tf_stamped.header.stamp = self.get_clock().now().to_msg()
+        tf_stamped.header.frame_id = 'world'
+        tf_stamped.child_frame_id = 'base'
+        tf_stamped.transform.translation.x = 0.0
+        tf_stamped.transform.translation.y = 0.3
+        tf_stamped.transform.translation.z = 0.3
+
+        quaternion = euler_to_quaternion(0.0, 0.0, 1.57)
+
+        tf_stamped.transform.rotation.x = quaternion[0]
+        tf_stamped.transform.rotation.y = quaternion[1]
+        tf_stamped.transform.rotation.z = quaternion[2]
+        tf_stamped.transform.rotation.w = quaternion[3]
+
+        return (tf_stamped)
+
+
+def main():
+    rclpy.init()
+    try:
+        base = Base()
+        try:
+            rclpy.spin(base)
+        except KeyboardInterrupt:
+            base.get_logger().info('Keyboard Interrupt (SIGINT)')
+        finally:
+            base.destroy_node()
+    finally:
+        rclpy.shutdown()
+
+
+if __name__ == '__main__':
+    main()
+두 좌표계간의 위치와 회전이 변화가 없다면 StaticTransformBroadcaster를 사용하는게 더 효율적이다. 
+
+​
+
+StaticTransformBroadcaster 객체에 Node객체를 넘겨주어 /tf_static 퍼블리셔를 생성하도록 하고, sendTransform 함수에 broadcast 함수의 리턴값을 인자로 넘겨주면 world 좌표계 기준 base 좌표계의 동차 변환을 등록할 수 있다.
+
+# ... 코드 생략 ...
+        self.get_logger().info('Make static tf (world->base)')
+        self.static_tf_broadcaster = StaticTransformBroadcaster(self)
+
+        self.static_tf_broadcaster.sendTransform(self.broadcast())
+
+    def broadcast(self):
+        tf_stamped = TransformStamped()
+
+        tf_stamped.header.stamp = self.get_clock().now().to_msg()
+        tf_stamped.header.frame_id = 'world'
+        tf_stamped.child_frame_id = 'base'
+        tf_stamped.transform.translation.x = 0.0
+        tf_stamped.transform.translation.y = 0.3
+        tf_stamped.transform.translation.z = 0.3
+
+        quaternion = euler_to_quaternion(0.0, 0.0, 1.57)
+
+        tf_stamped.transform.rotation.x = quaternion[0]
+        tf_stamped.transform.rotation.y = quaternion[1]
+        tf_stamped.transform.rotation.z = quaternion[2]
+        tf_stamped.transform.rotation.w = quaternion[3]
+
+        return (tf_stamped)
+# ... 코드 생략 ...
+3.2.4 실행
+
+먼저 아래 명령어를 통해 broadcaster 노드를 실행시켜서 tf 정보를 발간하자. 발간된 tf 정보는 RViz2를 통해 시각화 시킬 수 있다. 아래 명령어를 통해 이를 확인해 보자. RViz2가 실행되면 pan, tilt 좌표가 실시간으로 변화하는 것을 확인할 수 있다.
+
+$ ros2 run tf2_rclpy_example broadcaster
+[INFO] [1618187608.674991964] [arm]: Move Arm!
+$ rviz2 -d ~/robot_ws/src/ros2-seminar-examples/tf2_rclcpp_example/rviz/arm.rviz
+다음은 listener 노드를 실행시켜서 broadcaster를 통해 발간된 world 기준 좌표계로 부터 pan 좌표계 사이의 동차 변환 행렬을 확인해 볼 수 있다.
+
+$ ros2 run tf2_rclpy_example listener
+[INFO] [1618187643.866363173] [tf2_listener]: Got geometry_msgs.msg.TransformStamped(header=std_msgs.msg.Header(stamp=builtin_interfaces.msg.Time(sec=1618187643, nanosec=818727259), frame_id='world'), child_frame_id='pan', transform=geometry_msgs.msg.Transform(translation=geometry_msgs.msg.Vector3(x=0.0, y=0.0, z=0.0), rotation=geometry_msgs.msg.Quaternion(x=0.0, y=0.0, z=-0.5156096178059482, w=0.8568236236390802)))
+[INFO] [1618187644.329761186] [tf2_listener]: Got geometry_msgs.msg.TransformStamped(header=std_msgs.msg.Header(stamp=builtin_interfaces.msg.Time(sec=1618187644, nanosec=318526610), frame_id='world'), child_frame_id='pan', transform=geometry_msgs.msg.Transform(translation=geometry_msgs.msg.Vector3(x=0.0, y=0.0, z=0.0), rotation=geometry_msgs.msg.Quaternion(x=0.0, y=0.0, z=-0.7697113654655446, w=0.6383920534226336)))
+[INFO] [1618187644.830053160] [tf2_listener]: Got geometry_msgs.msg.TransformStamped(header=std_msgs.msg.Header(stamp=builtin_interfaces.msg.Time(sec=1618187644, nanosec=818525866), frame_id='world'), child_frame_id='pan', transform=geometry_msgs.msg.Transform(translation=geometry_msgs.msg.Vector3(x=0.0, y=0.0, z=0.0), rotation=geometry_msgs.msg.Quaternion(x=0.0, y=0.0, z=-0.8414702182572789, w=0.5403034996981301)))
+아래 명령어를 통해 static_broadcaster 노드를 실행시키고 RViz2를 통해 tf 정보를 확인해보면 고정된 좌표계를 확인할 수 있다.
+
+$ ros2 run tf2_rclpy_example static_broadcaster
+$ rviz2 -d ~/robot_ws/src/ros2-seminar-examples/tf2_rclcpp_example/rviz/arm.rviz
+4. 맺음말
+
+tf2 는 분산 시스템을 기반으로 ROS를 이용한 로봇개발에서 사용 가능한 좌표 변환 라이브러리이다. tf2 를 사용하면 좌표 변환을 위한 실시간 데이터들을 따로 관리할 필요 없이, 좌표계의 이름만으로 동차 변환 행렬을 얻을 수 있다는 장점을 가진다. 또한 선형대수학을 위한 함수와 여러 오픈소스와 함께 쓸 수 있는 자료형 변환 함수를 지원한다.하지만 네트워크 상태에 따라 그 성능이 현저히 떨어진다는 단점을 가진다. tf2는 SLAM[44], Navigation[45], MoveIt![46] 과 같은 ROS의 대표적인 패키지들에서 사용 중이기에 꼭 숙지하고 있어야할 라이브러리 중에 하나이다. 이번 강의를 통해 추후 로봇 개발 과정에서 어려움 없이 tf2 를 사용하고, 오픈 소스를 사용할 때 맞닥들이는 tf2 관련 에러 메시지를 읽고 디버깅하는데도 도움이 될 수 있기를 바란다.
+
+​
+
+​
+
+​
+
+[참고 자료]
+
+[1] 로봇 운영체제 ROS 강좌 목차: https://cafe.naver.com/openrt/24070
+
+[2] https://en.wikipedia.org/wiki/Right-hand_rule
+
+[3] https://en.wikipedia.org/wiki/Rotation_matrix
+
+[4] http://web.cs.iastate.edu/~cs577/handouts/homogeneous-transform.pdf
+
+[5] http://wiki.ros.org/tf
+
+[6] http://wiki.ros.org/tf/Design
+
+[7] http://wiki.ros.org/Papers/TePRA2013_Foote?action=AttachFile&do=view&target=TePRA2013_Foote.pdf
+
+[8] https://wiki.ros.org/tf2
+
+[9] https://www.osrfoundation.org/wordpress2/wp-content/uploads/2015/04/tf2.pdf
+
+[10] http://wiki.ros.org/tf2/Tutorials/Introduction%20to%20tf2
+
+[11] http://wiki.ros.org/tf2/Tutorials
+
+[12] https://github.com/ros2/geometry2/tree/foxy/tf2_py
+
+[13] https://docs.ros.org/en/foxy/Tutorials/tf2.html
+
+[14] https://github.com/ros2/geometry2/tree/foxy
+
+[15] https://github.com/ros2/geometry2/tree/foxy/tf2
+
+[16] https://github.com/ros2/geometry2/tree/foxy/tf2_geometry_msgs
+
+[17] https://github.com/ros2/geometry2/tree/foxy/tf2_sensor_msgs
+
+[18] https://github.com/bulletphysics/bullet3
+
+[19] https://eigen.tuxfamily.org/index.php?title=Main_Page
+
+[20] https://www.orocos.org/kdl.html
+
+[21] https://pointclouds.org/
+
+[22] http://wiki.ros.org/tf2_ros
+
+[23] https://github.com/ros2/geometry2/blob/foxy/tf2_ros/include/tf2_ros/buffer.h
+
+[24] https://github.com/ros2/geometry2/blob/foxy/tf2_ros/include/tf2_ros/transform_listener.h
+
+[25] https://github.com/ros2/geometry2/blob/foxy/tf2_ros/include/tf2_ros/transform_broadcaster.h
+
+[26] https://github.com/ros2/geometry2/blob/foxy/tf2_ros/include/tf2_ros/static_transform_broadcaster.h
+
+[27] https://github.com/robotpilot/ros2-seminar-examples/tree/develop/tf2_rclcpp_example
+
+[28] https://github.com/robotpilot/ros2-seminar-examples/tree/develop/tf2_rclpy_example
+
+[29] https://github.com/ros2/common_interfaces/blob/foxy/geometry_msgs/msg/TransformStamped.msg
+
+[30] https://github.com/ros2/geometry2/blob/foxy/tf2/include/tf2/LinearMath/Quaternion.h
+
+[31] http://wiki.ros.org/tf2/Tutorials/Quaternions
+
+[32] https://eater.net/quaternions
+
+[33] https://en.wikipedia.org/wiki/Euler_angles
+
+[34] http://wiki.ros.org/tf2/Tutorials/Time%20travel%20with%20tf2%20%28C%2B%2B%29
+
+[35] https://github.com/ros2/geometry2/blob/foxy/tf2/include/tf2/LinearMath/Matrix3x3.h
+
+[36] https://github.com/ros2/geometry2/blob/foxy/tf2/include/tf2/LinearMath/Transform.h
+
+[37] https://github.com/ros2/geometry2/tree/foxy/tf2_tools
+
+[38] https://github.com/ros2/geometry2/blob/foxy/tf2_ros/src/tf2_echo.cpp
+
+[39] https://github.com/ros2/geometry2/blob/foxy/tf2_ros/src/tf2_monitor.cpp
+
+[40] https://github.com/ros2/geometry2/tree/foxy/tf2/include/tf2/LinearMath
+
+[41] https://github.com/robotpilot/ros2-seminar-examples/blob/develop/tf2_rclpy_example/tf2_rclpy_example/conversions.py
+
+[42] https://docs.python.org/ko/3/library/asyncio-task.html#coroutines
+
+[43] https://docs.python.org/ko/3/library/asyncio-task.html#awaitables
+
+[44] https://github.com/ros2/cartographer_ros
+
+[45] https://github.com/ros-planning/navigation2
+
+[46] https://github.com/ros-planning/moveit2
+
+[47] https://en.wikipedia.org/wiki/Query
