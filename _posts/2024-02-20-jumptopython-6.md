@@ -40,9 +40,6 @@ title: "점프 투 파이썬 6장 연습문제"
    python memo.py -a "Life is too short"
 
    
-
-   
-
 5. 탭 문자를 공백 문자 4개로 바꾸기
 
 다음과 같은 형식으로 프로그램이 수행되도록 만들 것이다.
@@ -58,8 +55,6 @@ tabto4.py는 우리가 작성해야 할 파이썬 프로그램 이름, src는 �
 ```no-highlight
 python tabto4.py a.txt b.txt
 ```
-
-
 
 6. 하위 디렉토리 검색하기
 
